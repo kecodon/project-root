@@ -5,7 +5,19 @@ import json
 
 app = Flask(__name__)
 
-workers = {}
+workers = {
+    'rig01': {
+        'status': 'online',
+        'hashrate': '0 H/s',
+        'last_seen': datetime.datetime.now(),
+        'config': {
+            'tool': 'xmrig',
+            'wallet': 'NHbSHmqm1ojuTRtdwkURwhamQ1pNC9SkJU9T',
+            'pool': 'randomxmonero.auto.nicehash.com:9200',
+            'extra_args': '-a rx/0'
+        }
+    }
+}
 wallets = []
 flight_sheets = []
 
