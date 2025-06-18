@@ -19,6 +19,26 @@ async function deleteWallet(source) {
 function openWalletModal() {
   new bootstrap.Modal(document.getElementById("walletModal")).show();
 }
+async function addWallet() {
+    const name = document.getElementById("wallet-name").value;
+    const address = document.getElementById("wallet-address").value;
+    const coin = document.getElementById("wallet-coin").value;
+
+    const response = await fetch("/api/wallets/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, address, coin }),
+    });
+
+    if (response.ok) {
+        await loadWallets();
+        document.getElementById("wallet-name").value = "";
+        document.getElementById("wallet-address").value = "";
+        document.getElementById("wallet-coin").value = "";
+    } else {
+        alert("Failed to add wallet");
+    }
+}
 document.getElementById("walletForm").onsubmit = async function(e) {
   e.preventDefault();
   const coin = document.getElementById("coin").value;
