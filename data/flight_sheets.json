@@ -1,0 +1,7 @@
+{
+  "coin": "XMR",
+  "wallet": "my-wallet",
+  "pool": "pool.supportxmr.com:3333",
+  "miner": "xmrig",
+  "name": "XMR Sheet #1"
+}
