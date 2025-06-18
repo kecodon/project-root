@@ -1,101 +1,76 @@
-from flask import Flask, render_template, request, jsonify
-from datetime import datetime
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List
 import json
 import os
 
-app = Flask(__name__)
+app = FastAPI()
 
-workers = {}
-wallets = []
-flight_sheets = []
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route("/")
-def index():
-    return render_template("index.html", workers=workers)
+WALLETS_FILE = "wallets.json"
+FLIGHT_SHEETS_FILE = "flight_sheets.json"
 
-@app.route("/wallets")
-def wallet_page():
-    return render_template("wallets.html", wallets=wallets)
+# Ensure storage files exist
+for file in [WALLETS_FILE, FLIGHT_SHEETS_FILE]:
+    if not os.path.exists(file):
+        with open(file, 'w') as f:
+            json.dump([], f)
 
-@app.route("/flight_sheets")
-def flight_sheets_page():
-    return render_template("flight_sheets.html", flight_sheets=flight_sheets, wallets=wallets)
+class Wallet(BaseModel):
+    coin: str
+    name: str
+    address: str
 
-@app.route("/api/config")
-def get_config():
-    worker = request.args.get("worker")
-    for fs in flight_sheets:
-        if fs.get("applied") and worker in fs.get("applied_workers", []):
-            return jsonify(fs)
-    return jsonify({})
+class MinerConfig(BaseModel):
+    miner: str
+    options: dict
 
-@app.route("/api/report", methods=["POST"])
-def report_status():
-    data = request.json
-    worker = data.get("worker")
-    data["last_seen"] = datetime.now().isoformat()
-    workers[worker] = data
-    return jsonify({"ok": True})
+class FlightSheet(BaseModel):
+    coin: str
+    wallet: str
+    pool: str
+    miner_config: MinerConfig
+    name: str
 
-@app.route("/api/wallet", methods=["POST"])
-def add_wallet():
-    data = request.json
-    wallets.append(data)
-    return jsonify({"ok": True})
+# Wallets endpoints
+@app.get("/api/wallets", response_model=List[Wallet])
+def get_wallets():
+    with open(WALLETS_FILE, 'r') as f:
+        return json.load(f)
 
-@app.route("/api/flight_sheet", methods=["POST"])
-def add_flight_sheet():
-    data = request.json
-    fs_name = data.get("name")
-    exists = next((f for f in flight_sheets if f["name"] == fs_name), None)
-    if exists:
-        flight_sheets.remove(exists)
-    data["applied_workers"] = []
-    data["applied"] = False
-    flight_sheets.append(data)
-    return jsonify({"ok": True})
+@app.post("/api/wallets")
+def add_wallet(wallet: Wallet):
+    with open(WALLETS_FILE, 'r') as f:
+        wallets = json.load(f)
+    wallets.append(wallet.dict())
+    with open(WALLETS_FILE, 'w') as f:
+        json.dump(wallets, f, indent=2)
+    return {"status": "ok"}
 
-@app.route("/api/apply_all", methods=["POST"])
-def apply_all():
-    fs_name = request.json.get("flight_sheet")
-    for fs in flight_sheets:
-        fs["applied"] = (fs["name"] == fs_name)
-        if fs["applied"]:
-            fs["applied_workers"] = list(workers.keys())
-    return jsonify({"ok": True})
+# Flight sheets endpoints
+@app.get("/api/flight_sheets", response_model=List[FlightSheet])
+def get_flight_sheets():
+    with open(FLIGHT_SHEETS_FILE, 'r') as f:
+        return json.load(f)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=6001)
-@app.route('/api/flight_sheets', methods=['POST'])
-def save_flight_sheet():
-    data = request.json
-
-    if not data:
-        return jsonify({'status': 'error', 'message': 'No data received'}), 400
-
-    flight_sheets = []
-    if os.path.exists('flight_sheets.json'):
-        with open('flight_sheets.json') as f:
-            flight_sheets = json.load(f)
-
-    flight_sheets.append(data)
-
-    with open('flight_sheets.json', 'w') as f:
+@app.post("/api/flight_sheets")
+def add_flight_sheet(flight_sheet: FlightSheet):
+    with open(FLIGHT_SHEETS_FILE, 'r') as f:
+        flight_sheets = json.load(f)
+    flight_sheets.append(flight_sheet.dict())
+    with open(FLIGHT_SHEETS_FILE, 'w') as f:
         json.dump(flight_sheets, f, indent=2)
+    return {"status": "ok"}
 
-    return jsonify({'status': 'success'})
-@app.route('/flight_sheets')
-def flight_sheets():
-    # Load wallets
-    wallets = []
-    if os.path.exists('wallets.json'):
-        with open('wallets.json') as f:
-            wallets = json.load(f)
-
-    # Load flight sheets
-    flight_sheets = []
-    if os.path.exists('flight_sheets.json'):
-        with open('flight_sheets.json') as f:
-            flight_sheets = json.load(f)
-
-    return render_template('flight_sheets.html', wallets=wallets, flight_sheets=flight_sheets)
+# Test route
+@app.get("/")
+def read_root():
+    return {"status": "server running on port 6001"}
