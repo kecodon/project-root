@@ -1,0 +1,34 @@
+```html
+<!DOCTYPE html>
+<html>
+<head><title>Wallets</title></head>
+<body>
+<h1>Wallets</h1>
+<form method="post" action="#" onsubmit="submitWallet(event)">
+    Coin: <input type="text" id="coin"><br>
+    Wallet Address: <input type="text" id="address"><br>
+    <button type="submit">Add</button>
+</form>
+<ul id="wallet-list">
+    {% for w in wallets %}
+    <li>{{ w.coin }} - {{ w.address }}</li>
+    {% endfor %}
+</ul>
+<script>
+function submitWallet(e) {
+    e.preventDefault();
+    fetch("/api/wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            coin: document.getElementById("coin").value,
+            address: document.getElementById("address").value
+        })
+    }).then(() => location.reload());
+}
+</script>
+</body>
+</html>
+```
+
+---
