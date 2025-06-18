@@ -1,4 +1,3 @@
-### templates/index.html
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,6 +6,10 @@
 </head>
 <body>
 <h1>Workers</h1>
+<nav>
+    <a href="/wallets">Wallets</a> |
+    <a href="/flight_sheets">Flight Sheets</a>
+</nav>
 <table>
     <tr><th>Name</th><th>Status</th><th>Hashrate</th><th>Last Seen</th></tr>
     {% for name, info in workers.items() %}
