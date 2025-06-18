@@ -10,7 +10,9 @@ while True:
         print(f"Fetching config from {SERVER_URL}/api/config?worker={WORKER_NAME}")
         res = requests.get(f"{SERVER_URL}/api/config", params={"worker": WORKER_NAME})
         config = res.json()
-        print(f"Fetched config from server: {config}")  # ← THÊM Ở ĐÂY
+
+        print(f"Fetched config from server: {config}")
+
         if not config.get("miner"):
             print("No config received. Sleeping...")
             time.sleep(15)
@@ -39,3 +41,4 @@ while True:
     except Exception as e:
         print("Error:", e)
         time.sleep(15)
+
