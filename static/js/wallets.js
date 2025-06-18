@@ -39,7 +39,7 @@ document.getElementById("walletForm").addEventListener("submit", function (e) {
   }).then(() => {
     document.getElementById("walletForm").reset();
     bootstrap.Modal.getInstance(document.getElementById("walletModal")).hide();
-    loadWallets(); // Reload after save
+    loadWallets();  // <== QUAN TRỌNG: GỌI LẠI
   });
 });
 
