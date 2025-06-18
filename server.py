@@ -1,23 +1,10 @@
-### server.py
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import json
 
 app = Flask(__name__)
 
-workers = {
-    'rig01': {
-        'status': 'online',
-        'hashrate': '0 H/s',
-        'last_seen': datetime.now(),
-        'config': {
-            'tool': 'xmrig',
-            'wallet': 'NHbSHmqm1ojuTRtdwkURwhamQ1pNC9SkJU9T',
-            'pool': 'randomxmonero.auto.nicehash.com:9200',
-            'extra_args': '-a rx/0'
-        }
-    }
-}
+workers = {}
 wallets = []
 flight_sheets = []
 
@@ -62,6 +49,8 @@ def add_flight_sheet():
     exists = next((f for f in flight_sheets if f["name"] == fs_name), None)
     if exists:
         flight_sheets.remove(exists)
+    data["applied_workers"] = []
+    data["applied"] = False
     flight_sheets.append(data)
     return jsonify({"ok": True})
 
