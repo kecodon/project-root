@@ -1,0 +1,53 @@
+### `templates/flight_sheets.html`
+```html
+<!DOCTYPE html>
+<html>
+<head><title>Flight Sheets</title></head>
+<body>
+<h1>Flight Sheets</h1>
+<form method="post" action="#" onsubmit="submitFS(event)">
+    Name: <input id="name"><br>
+    Coin: <input id="coin"><br>
+    Pool: <input id="pool"><br>
+    Wallet: <select id="wallet">
+        {% for w in wallets %}<option value="{{ w.address }}">{{ w.coin }} - {{ w.address }}</option>{% endfor %}
+    </select><br>
+    Miner: <input id="miner"><br>
+    Args: <input id="args"><br>
+    <button type="submit">Save</button>
+</form>
+<ul>
+    {% for fs in flight_sheets %}
+    <li>{{ fs.name }} - {{ fs.coin }} - {{ fs.pool }} - {{ fs.wallet }} - {{ fs.miner }} - {{ fs.args }} - Applied: {{ fs.applied }}</li>
+    {% endfor %}
+</ul>
+<button onclick="applyAll()">Apply All</button>
+<script>
+function submitFS(e) {
+    e.preventDefault();
+    fetch("/api/flight_sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: name.value,
+            coin: coin.value,
+            pool: pool.value,
+            wallet: wallet.value,
+            miner: miner.value,
+            args: args.value
+        })
+    }).then(() => location.reload());
+}
+function applyAll() {
+    fetch("/api/apply_all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flight_sheet: name.value })
+    }).then(() => location.reload());
+}
+</script>
+</body>
+</html>
+```
+
+---
