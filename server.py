@@ -108,3 +108,13 @@ async def delete_flight_sheet(name: str = Form(...)):
         conn.execute("DELETE FROM flight_sheets WHERE name=?", (name,))
         conn.commit()
     return {"status": "deleted"}
+@app.post("/api/wallets/add")
+async def add_wallet(wallet: dict):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO wallets (name, address, coin) VALUES (?, ?, ?)
+    ''', (wallet["name"], wallet["address"], wallet["coin"]))
+    conn.commit()
+    conn.close()
+    return {"message": "Wallet added successfully"}
