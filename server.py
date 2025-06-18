@@ -1,76 +1,26 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
-import json
-import os
+
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+import os, json
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
-WALLETS_FILE = "wallets.json"
-FLIGHT_SHEETS_FILE = "flight_sheets.json"
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    wallets = json.load(open("data/wallets.json")) if os.path.exists("data/wallets.json") else []
+    flightsheets = json.load(open("data/flight_sheets.json")) if os.path.exists("data/flight_sheets.json") else []
+    return templates.TemplateResponse("flight_sheets.html", {"request": request, "wallets": wallets, "flightsheets": flightsheets})
 
-# Ensure storage files exist
-for file in [WALLETS_FILE, FLIGHT_SHEETS_FILE]:
-    if not os.path.exists(file):
-        with open(file, 'w') as f:
-            json.dump([], f)
+@app.get("/wallets", response_class=HTMLResponse)
+def wallets_page(request: Request):
+    wallets = json.load(open("data/wallets.json")) if os.path.exists("data/wallets.json") else []
+    return templates.TemplateResponse("wallets.html", {"request": request, "wallets": wallets})
 
-class Wallet(BaseModel):
-    coin: str
-    name: str
-    address: str
-
-class MinerConfig(BaseModel):
-    miner: str
-    options: dict
-
-class FlightSheet(BaseModel):
-    coin: str
-    wallet: str
-    pool: str
-    miner_config: MinerConfig
-    name: str
-
-# Wallets endpoints
-@app.get("/api/wallets", response_model=List[Wallet])
-def get_wallets():
-    with open(WALLETS_FILE, 'r') as f:
-        return json.load(f)
-
-@app.post("/api/wallets")
-def add_wallet(wallet: Wallet):
-    with open(WALLETS_FILE, 'r') as f:
-        wallets = json.load(f)
-    wallets.append(wallet.dict())
-    with open(WALLETS_FILE, 'w') as f:
-        json.dump(wallets, f, indent=2)
-    return {"status": "ok"}
-
-# Flight sheets endpoints
-@app.get("/api/flight_sheets", response_model=List[FlightSheet])
-def get_flight_sheets():
-    with open(FLIGHT_SHEETS_FILE, 'r') as f:
-        return json.load(f)
-
-@app.post("/api/flight_sheets")
-def add_flight_sheet(flight_sheet: FlightSheet):
-    with open(FLIGHT_SHEETS_FILE, 'r') as f:
-        flight_sheets = json.load(f)
-    flight_sheets.append(flight_sheet.dict())
-    with open(FLIGHT_SHEETS_FILE, 'w') as f:
-        json.dump(flight_sheets, f, indent=2)
-    return {"status": "ok"}
-
-# Test route
-@app.get("/")
-def read_root():
+@app.get("/api/status")
+def status():
     return {"status": "server running on port 6001"}
