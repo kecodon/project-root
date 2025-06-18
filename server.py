@@ -1,33 +1,45 @@
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.staticfiles import StaticFiles
+# server.py
+import os
+import sqlite3
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Path
-from pydantic import BaseModel
-from typing import List
-import json
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from typing import Optional
+
+# Database path
+DB_PATH = 'database/hiveos.db'
+
+# Ensure DB folder exists
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+# Init DB if not exists
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS wallets (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        coin TEXT,
+                        source TEXT,
+                        address TEXT
+                    )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS flight_sheets (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT,
+                        coin TEXT,
+                        wallet TEXT,
+                        pool TEXT,
+                        miner TEXT
+                    )''')
+        conn.commit()
+
+init_db()
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
-TEMPLATE_DIR = BASE_DIR / "templates"
-DATA_DIR = BASE_DIR / "data"
-
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
-
-wallet_file = DATA_DIR / "wallets.json"
-flight_sheet_file = DATA_DIR / "flight_sheets.json"
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 class Wallet(BaseModel):
     coin: str
@@ -35,27 +47,16 @@ class Wallet(BaseModel):
     address: str
 
 class FlightSheet(BaseModel):
+    name: str
     coin: str
     wallet: str
     pool: str
     miner: str
-    name: str
 
-def load_json_file(file):
-    if file.exists():
-        with open(file, "r") as f:
-            return json.load(f)
-    return []
-
-def save_json_file(file, data):
-    with open(file, "w") as f:
-        json.dump(data, f, indent=2)
-
+# Routes
 @app.get("/", response_class=HTMLResponse)
-async def index():
-    return HTMLResponse("""
-        <html><head><meta http-equiv="refresh" content="0; url=/flight_sheets"/></head><body></body></html>
-    """)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/wallets", response_class=HTMLResponse)
 async def wallets_page(request: Request):
@@ -63,42 +64,47 @@ async def wallets_page(request: Request):
 
 @app.get("/flight_sheets", response_class=HTMLResponse)
 async def flight_sheets_page(request: Request):
-    wallets = load_json_file(wallet_file)
-    flightsheets = load_json_file(flight_sheet_file)
-    return templates.TemplateResponse("flight_sheets.html", {
-        "request": request,
-        "wallets": wallets,
-        "flightsheets": flightsheets
-    })
+    wallets = []
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        wallets = c.execute("SELECT * FROM wallets").fetchall()
+    return templates.TemplateResponse("flight_sheets.html", {"request": request, "wallets": wallets})
 
+# API for Wallets
 @app.get("/api/wallets")
 async def get_wallets():
-    return load_json_file(wallet_file)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        wallets = conn.execute("SELECT * FROM wallets").fetchall()
+        return JSONResponse([dict(w) for w in wallets])
 
 @app.post("/api/wallets")
 async def add_wallet(wallet: Wallet):
-    wallets = load_json_file(wallet_file)
-    wallets.append(wallet.dict())
-    save_json_file(wallet_file, wallets)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("INSERT INTO wallets (coin, source, address) VALUES (?, ?, ?)",
+                     (wallet.coin, wallet.source, wallet.address))
+        conn.commit()
     return {"status": "ok"}
 
-@app.post("/api/flight_sheet")
-async def create_flight_sheet(sheet: FlightSheet):
-    sheets = load_json_file(flight_sheet_file)
-    sheets.append(sheet.dict())
-    save_json_file(flight_sheet_file, sheets)
+# API for Flight Sheets
+@app.get("/api/flight_sheets")
+async def get_flight_sheets():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        sheets = conn.execute("SELECT * FROM flight_sheets").fetchall()
+        return JSONResponse([dict(s) for s in sheets])
+
+@app.post("/api/flight_sheets")
+async def add_flight_sheet(sheet: FlightSheet):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("INSERT INTO flight_sheets (name, coin, wallet, pool, miner) VALUES (?, ?, ?, ?, ?)",
+                     (sheet.name, sheet.coin, sheet.wallet, sheet.pool, sheet.miner))
+        conn.commit()
     return {"status": "ok"}
 
-@app.get("/", response_class=HTMLResponse)
-def index():
-    return templates.TemplateResponse("index.html", {"request": Request})
-@app.post("/api/flight_sheet/delete")
-async def delete_flight_sheet(request: Request):
-    body = await request.json()
-    name = body.get("name")
-    if not name:
-        raise HTTPException(status_code=400, detail="Missing name")
-    sheets = load_json_file(flight_sheet_file)
-    sheets = [s for s in sheets if s["name"] != name]
-    save_json_file(flight_sheet_file, sheets)
+@app.post("/api/flight_sheets/delete")
+async def delete_flight_sheet(name: str = Form(...)):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("DELETE FROM flight_sheets WHERE name=?", (name,))
+        conn.commit()
     return {"status": "deleted"}
