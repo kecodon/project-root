@@ -1,37 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Wallets</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="/static/js/wallets.js" defer></script>
 </head>
-<body class="bg-dark text-light">
+<body>
   {% include 'navbar.html' %}
-  <div class="container py-4">
-    <h2>Wallets</h2>
-    <table class="table table-dark table-hover">
-      <thead><tr><th>Coin</th><th>Source</th><th>Address</th><th>Action</th></tr></thead>
-      <tbody id="wallets-table"></tbody>
-    </table>
-    <button class="btn btn-primary" onclick="openWalletModal()">Add Wallet</button>
-  </div>
-  <div class="modal fade" id="walletModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content bg-dark text-light">
-        <form id="walletForm">
-          <div class="modal-header"><h5 class="modal-title">Add Wallet</h5></div>
-          <div class="modal-body">
-            <input type="text" id="coin" class="form-control mb-2" placeholder="Coin" required>
-            <input type="text" id="source" class="form-control mb-2" placeholder="Source" required>
-            <input type="text" id="address" class="form-control mb-2" placeholder="Address" required>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-success">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  <h2>Wallets</h2>
+  <form id="walletForm">
+    <input type="text" id="name" placeholder="Wallet Name" required>
+    <input type="text" id="address" placeholder="Wallet Address" required>
+    <input type="text" id="coin" placeholder="Coin" required>
+    <button type="submit">Add Wallet</button>
+  </form>
+  <ul id="walletList"></ul>
 </body>
 </html>
