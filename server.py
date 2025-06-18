@@ -1,12 +1,10 @@
-### `server.py`
-```python
+### server.py
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import json
 
 app = Flask(__name__)
 
-# Dữ liệu mô phỏng
 workers = {}
 wallets = []
 flight_sheets = []
@@ -66,6 +64,3 @@ def apply_all():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6001)
-```
-
----
