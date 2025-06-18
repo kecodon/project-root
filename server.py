@@ -9,7 +9,7 @@ workers = {
     'rig01': {
         'status': 'online',
         'hashrate': '0 H/s',
-        'last_seen': datetime.datetime.now(),
+        'last_seen': datetime.now(),
         'config': {
             'tool': 'xmrig',
             'wallet': 'NHbSHmqm1ojuTRtdwkURwhamQ1pNC9SkJU9T',
