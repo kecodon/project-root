@@ -6,14 +6,29 @@
 </head>
 <body>
   {% include 'navbar.html' %}
-  <h2>Flight Sheets</h2>
+
+  <h1>Flight Sheets</h1>
+
   <form id="flightForm">
-    <input type="text" id="coin" placeholder="Coin" required>
-    <select id="wallet" required></select>
-    <input type="text" id="pool" placeholder="Pool URL" required>
-    <input type="text" id="miner" placeholder="Miner Tool" required>
+    <label for="name">Name:</label>
+    <input type="text" id="name" required><br>
+
+    <label for="coin">Coin:</label>
+    <input type="text" id="coin" required><br>
+
+    <label for="wallet">Wallet:</label>
+    <select id="wallet" required></select><br>
+
+    <label for="pool">Pool:</label>
+    <input type="text" id="pool" required><br>
+
+    <label for="miner">Miner:</label>
+    <input type="text" id="miner" required><br>
+
     <button type="submit">Add Flight Sheet</button>
   </form>
+
+  <h2>Danh sách Flight Sheets</h2>
   <ul id="flightList"></ul>
 </body>
 </html>
