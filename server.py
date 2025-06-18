@@ -118,3 +118,23 @@ async def add_wallet(wallet: dict):
     conn.commit()
     conn.close()
     return {"message": "Wallet added successfully"}
+@app.get("/api/flight-sheets/list")
+async def list_flight_sheets():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, coin, wallet, pool, miner FROM flight_sheets")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": row[0], "coin": row[1], "wallet": row[2], "pool": row[3], "miner": row[4]} for row in rows]
+
+
+@app.post("/api/flight-sheets/add")
+async def add_flight_sheet(sheet: dict):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO flight_sheets (coin, wallet, pool, miner) VALUES (?, ?, ?, ?)
+    ''', (sheet["coin"], sheet["wallet"], sheet["pool"], sheet["miner"]))
+    conn.commit()
+    conn.close()
+    return {"message": "Flight Sheet added"}
