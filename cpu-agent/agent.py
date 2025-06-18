@@ -1,5 +1,4 @@
-### `cpu-agent/agent.py`
-```python
+### cpu-agent/agent.py
 import requests
 import subprocess
 import time
@@ -29,7 +28,6 @@ while True:
             decoded = line.decode(errors='ignore')
             print(decoded.strip())
 
-            # Gửi hashrate đơn giản theo thời gian thực
             if "speed" in decoded:
                 try:
                     hashrate = decoded.split("speed:")[1].split()[0]
@@ -41,6 +39,3 @@ while True:
     except Exception as e:
         print("Error:", e)
         time.sleep(15)
-```
-
----
