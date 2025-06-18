@@ -1,22 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   loadWallets();
-
-  document.getElementById("walletForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const wallet = {
-      coin: document.getElementById("coin").value,
-      source: document.getElementById("source").value,
-      address: document.getElementById("address").value
-    };
-    fetch("/api/wallet", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(wallet)
-    }).then(() => {
-      bootstrap.Modal.getInstance(document.getElementById("walletModal")).hide();
-      loadWallets();
-    });
-  });
+  document.getElementById("walletForm").addEventListener("submit", saveWallet);
 });
 
 function loadWallets() {
@@ -25,29 +9,50 @@ function loadWallets() {
     .then((data) => {
       const table = document.getElementById("wallets-table");
       table.innerHTML = "";
-      data.forEach((w, i) => {
-        const row = `
-          <tr>
-            <td>${w.coin}</td>
-            <td>${w.source}</td>
-            <td>${w.address}</td>
-            <td><button class="btn btn-sm btn-danger" onclick="deleteWallet(${i})">Delete</button></td>
-          </tr>`;
-        table.innerHTML += row;
+      data.forEach((wallet, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${wallet.coin}</td>
+          <td>${wallet.source}</td>
+          <td>${wallet.address}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="deleteWallet(${i})">Delete</button>
+          </td>
+        `;
+        table.appendChild(row);
       });
     });
 }
 
-function deleteWallet(index) {
-  fetch("/api/wallet/delete", {
+function saveWallet(e) {
+  e.preventDefault();
+  const wallet = {
+    coin: document.getElementById("coin").value,
+    source: document.getElementById("source").value,
+    address: document.getElementById("address").value,
+  };
+
+  fetch("/api/wallets", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ index })
+    body: JSON.stringify(wallet),
+  }).then(() => {
+    const modal = bootstrap.Modal.getInstance(document.getElementById("walletModal"));
+    modal.hide();
+    loadWallets();
+  });
+}
+
+function deleteWallet(index) {
+  fetch("/api/wallets/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ index }),
   }).then(() => loadWallets());
 }
 
 function openWalletModal() {
-  const modal = new bootstrap.Modal(document.getElementById("walletModal"));
   document.getElementById("walletForm").reset();
+  const modal = new bootstrap.Modal(document.getElementById("walletModal"));
   modal.show();
 }
