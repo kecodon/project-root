@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import json
+import os
 
 app = Flask(__name__)
 
@@ -65,3 +66,36 @@ def apply_all():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6001)
+@app.route('/api/flight_sheets', methods=['POST'])
+def save_flight_sheet():
+    data = request.json
+
+    if not data:
+        return jsonify({'status': 'error', 'message': 'No data received'}), 400
+
+    flight_sheets = []
+    if os.path.exists('flight_sheets.json'):
+        with open('flight_sheets.json') as f:
+            flight_sheets = json.load(f)
+
+    flight_sheets.append(data)
+
+    with open('flight_sheets.json', 'w') as f:
+        json.dump(flight_sheets, f, indent=2)
+
+    return jsonify({'status': 'success'})
+@app.route('/flight_sheets')
+def flight_sheets():
+    # Load wallets
+    wallets = []
+    if os.path.exists('wallets.json'):
+        with open('wallets.json') as f:
+            wallets = json.load(f)
+
+    # Load flight sheets
+    flight_sheets = []
+    if os.path.exists('flight_sheets.json'):
+        with open('flight_sheets.json') as f:
+            flight_sheets = json.load(f)
+
+    return render_template('flight_sheets.html', wallets=wallets, flight_sheets=flight_sheets)
