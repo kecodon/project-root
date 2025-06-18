@@ -89,6 +89,9 @@ async def create_flight_sheet(sheet: FlightSheet):
     save_json_file(flight_sheet_file, sheets)
     return {"status": "ok"}
 
+@app.get("/", response_class=HTMLResponse)
+def index():
+    return templates.TemplateResponse("index.html", {"request": Request})
 @app.post("/api/flight_sheet/delete")
 async def delete_flight_sheet(request: Request):
     body = await request.json()
